@@ -16,6 +16,22 @@ export default function Home() {
     });
   }, []);
 
+  const handleLogin = () => {
+    alert('Login functionality coming soon! 🚀');
+  };
+
+  const handleSignUp = () => {
+    alert('Sign up functionality coming soon! 📈');
+  };
+
+  const handleStartTrading = () => {
+    alert('Trading dashboard coming soon! 💰');
+  };
+
+  const handleWatchDemo = () => {
+    alert('Demo video coming soon! 🎥');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -31,10 +47,16 @@ export default function Home() {
               </span>
             </div>
             <div className="flex items-center space-x-4">
-              <button className="btn-primary">
+              <button
+                onClick={handleLogin}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition-colors cursor-pointer"
+              >
                 Login
               </button>
-              <button className="px-4 py-2 text-blue-600 hover:text-blue-800 dark:text-blue-400">
+              <button
+                onClick={handleSignUp}
+                className="px-6 py-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 font-semibold hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors cursor-pointer"
+              >
                 Sign Up
               </button>
             </div>
@@ -46,28 +68,28 @@ export default function Home() {
       <section className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="trading-card p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border p-6 hover:shadow-lg transition-shadow">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                 NIFTY 50
               </h3>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   ₹{marketData.nifty.price.toLocaleString()}
                 </span>
-                <span className={`text-lg font-semibold ${marketData.nifty.change >= 0 ? 'price-positive' : 'price-negative'}`}>
+                <span className={`text-lg font-semibold ${marketData.nifty.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {marketData.nifty.change >= 0 ? '+' : ''}₹{marketData.nifty.change}
                 </span>
               </div>
             </div>
-            <div className="trading-card p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border p-6 hover:shadow-lg transition-shadow">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                 SENSEX
               </h3>
               <div className="flex items-center justify-between">
                 <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   ₹{marketData.sensex.price.toLocaleString()}
                 </span>
-                <span className={`text-lg font-semibold ${marketData.sensex.change >= 0 ? 'price-positive' : 'price-negative'}`}>
+                <span className={`text-lg font-semibold ${marketData.sensex.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {marketData.sensex.change >= 0 ? '+' : ''}₹{marketData.sensex.change}
                 </span>
               </div>
@@ -77,20 +99,26 @@ export default function Home() {
       </section>
 
       {/* Hero Section */}
-      <section className="py-20">
+      <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">
             Master Indian Stock Trading
           </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-4xl mx-auto leading-relaxed">
             Practice trading with real Indian market data. Build your portfolio, learn strategies,
             and compete with other traders - all with virtual money.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="btn-primary text-lg px-8 py-3">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <button
+              onClick={handleStartTrading}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg px-8 py-3 rounded-lg transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 cursor-pointer"
+            >
               Start Trading Now
             </button>
-            <button className="px-8 py-3 text-lg border-2 border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors">
+            <button
+              onClick={handleWatchDemo}
+              className="px-8 py-3 text-lg border-2 border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900 rounded-lg transition-colors font-semibold cursor-pointer"
+            >
               Watch Demo
             </button>
           </div>
