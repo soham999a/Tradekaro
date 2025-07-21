@@ -3,7 +3,7 @@
 A comprehensive, real-time Indian stock trading platform with virtual trading, portfolio management, and educational features.
 
 ![TradeKaro](https://img.shields.io/badge/TradeKaro-Indian%20Stock%20Trading-blue?style=for-the-badge)
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-14.2.5-black?style=for-the-badge&logo=next.js)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 
 ## ✨ Features
@@ -19,8 +19,8 @@ A comprehensive, real-time Indian stock trading platform with virtual trading, p
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 15 with App Router
-- **Frontend**: React 19, TypeScript
+- **Framework**: Next.js 14.2.5 with App Router
+- **Frontend**: React 18.2.0, TypeScript
 - **Styling**: Tailwind CSS 4
 - **Authentication**: Firebase Auth
 - **Database**: Supabase (PostgreSQL)
