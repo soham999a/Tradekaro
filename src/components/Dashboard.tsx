@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Activity } from 'lucide-react';
-// import TradingInterface from './TradingInterface';
+import TradingInterface from './TradingInterface';
+import Portfolio from './Portfolio';
+import MarketAnalysis from './MarketAnalysis';
 
 interface Stock {
   symbol: string;
@@ -20,7 +22,7 @@ interface Portfolio {
 }
 
 export default function Dashboard() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'trading'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'trading' | 'portfolio' | 'analysis'>('dashboard');
   const [portfolio, setPortfolio] = useState<Portfolio>({
     totalValue: 1000000,
     totalGain: 25000,
@@ -44,24 +46,17 @@ export default function Dashboard() {
 
   // Show trading interface if selected
   if (currentView === 'trading') {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            🚀 Trading Interface Coming Soon!
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Advanced trading features are being developed
-          </p>
-          <button
-            onClick={() => setCurrentView('dashboard')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
+    return <TradingInterface onBack={() => setCurrentView('dashboard')} />;
+  }
+
+  // Show portfolio if selected
+  if (currentView === 'portfolio') {
+    return <Portfolio onBack={() => setCurrentView('dashboard')} />;
+  }
+
+  // Show market analysis if selected
+  if (currentView === 'analysis') {
+    return <MarketAnalysis onBack={() => setCurrentView('dashboard')} />;
   }
 
   return (
@@ -85,6 +80,18 @@ export default function Dashboard() {
                   ₹{portfolio.totalValue.toLocaleString()}
                 </p>
               </div>
+              <button
+                onClick={() => setCurrentView('analysis')}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+              >
+                Analysis
+              </button>
+              <button
+                onClick={() => setCurrentView('portfolio')}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg"
+              >
+                Portfolio
+              </button>
               <button
                 onClick={() => setCurrentView('trading')}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
