@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build && next export",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy": "node surge-deploy.js",
+    "surge": "npm run build && surge ./out tradekaro-india.surge.sh"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -24,6 +26,7 @@
     "postcss": "^8",
     "autoprefixer": "^10",
     "eslint": "^8",
-    "eslint-config-next": "14.2.5"
+    "eslint-config-next": "14.2.5",
+    "surge": "^0.23.1"
   }
 }
