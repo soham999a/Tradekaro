@@ -1,13 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// Simplified icons using emojis instead of lucide-react
-const TrendingUp = () => <span>📈</span>;
-const TrendingDown = () => <span>📉</span>;
-const DollarSign = () => <span>💰</span>;
-const PieChart = () => <span>📊</span>;
-const BarChart3 = () => <span>📊</span>;
-const Activity = () => <span>⚡</span>;
+import TradingInterface from './TradingInterface';
+import Portfolio from './Portfolio';
+import MarketAnalysis from './MarketAnalysis';
+import { getMarketIndices, type MarketIndex } from '../lib/marketData';
 
 interface Stock {
   symbol: string;
@@ -25,7 +22,7 @@ interface Portfolio {
 }
 
 export default function Dashboard() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'trading'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'trading' | 'portfolio' | 'analysis'>('dashboard');
   const [portfolio, setPortfolio] = useState<Portfolio>({
     totalValue: 1000000,
     totalGain: 25000,
@@ -41,43 +38,34 @@ export default function Dashboard() {
     { symbol: 'ICICIBANK', name: 'ICICI Bank', price: 987.60, change: -8.90, changePercent: -0.89 }
   ]);
 
-  const [marketIndices, setMarketIndices] = useState([
-    { name: 'NIFTY 50', value: 24567.85, change: 156.30, changePercent: 0.64 },
-    { name: 'SENSEX', value: 80234.67, change: 298.45, changePercent: 0.37 },
-    { name: 'BANK NIFTY', value: 52345.90, change: -89.23, changePercent: -0.17 }
-  ]);
+  const [marketIndices, setMarketIndices] = useState<MarketIndex[]>([]);
+
+  useEffect(() => {
+    loadMarketData();
+  }, []);
+
+  const loadMarketData = async () => {
+    try {
+      const indices = await getMarketIndices();
+      setMarketIndices(indices);
+    } catch (error) {
+      console.error('Error loading market data:', error);
+    }
+  };
 
   // Show trading interface if selected
   if (currentView === 'trading') {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 max-w-md">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            🚀 Trading Interface
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Advanced trading features with real Indian stocks coming soon!
-          </p>
-          <div className="space-y-4">
-            <div className="text-left">
-              <h3 className="font-semibold text-gray-900 dark:text-white">Features:</h3>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 mt-2 space-y-1">
-                <li>• Search RELIANCE, TCS, INFY, HDFCBANK</li>
-                <li>• Buy/Sell orders with Market/Limit options</li>
-                <li>• Live market status (9:15 AM - 3:30 PM IST)</li>
-                <li>• Real-time price updates</li>
-              </ul>
-            </div>
-          </div>
-          <button
-            onClick={() => setCurrentView('dashboard')}
-            className="mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
-          >
-            Back to Dashboard
-          </button>
-        </div>
-      </div>
-    );
+    return <TradingInterface onBack={() => setCurrentView('dashboard')} />;
+  }
+
+  // Show portfolio if selected
+  if (currentView === 'portfolio') {
+    return <Portfolio onBack={() => setCurrentView('dashboard')} />;
+  }
+
+  // Show market analysis if selected
+  if (currentView === 'analysis') {
+    return <MarketAnalysis onBack={() => setCurrentView('dashboard')} />;
   }
 
   return (
@@ -102,10 +90,22 @@ export default function Dashboard() {
                 </p>
               </div>
               <button
-                onClick={() => setCurrentView('trading')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                onClick={() => setCurrentView('analysis')}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
-                🚀 Start Trading
+                📊 Analysis
+              </button>
+              <button
+                onClick={() => setCurrentView('portfolio')}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                💼 Portfolio
+              </button>
+              <button
+                onClick={() => setCurrentView('trading')}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+              >
+                🚀 Trade
               </button>
             </div>
           </div>
@@ -260,15 +260,15 @@ export default function Dashboard() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
                             onClick={() => setCurrentView('trading')}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 mr-4"
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 mr-4 transition-colors"
                           >
-                            Buy
+                            🟢 Buy
                           </button>
                           <button
                             onClick={() => setCurrentView('trading')}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400"
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 transition-colors"
                           >
-                            Sell
+                            🔴 Sell
                           </button>
                         </td>
                       </tr>
