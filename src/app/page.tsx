@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Dashboard from '../components/Dashboard';
 
 export default function Home() {
+  const [currentView, setCurrentView] = useState('landing');
   const [marketData, setMarketData] = useState({
     nifty: { price: 0, change: 0 },
     sensex: { price: 0, change: 0 }
@@ -17,20 +19,25 @@ export default function Home() {
   }, []);
 
   const handleLogin = () => {
-    alert('Login functionality coming soon! 🚀');
+    setCurrentView('dashboard');
   };
 
   const handleSignUp = () => {
-    alert('Sign up functionality coming soon! 📈');
+    setCurrentView('dashboard');
   };
 
   const handleStartTrading = () => {
-    alert('Trading dashboard coming soon! 💰');
+    setCurrentView('dashboard');
   };
 
   const handleWatchDemo = () => {
     alert('Demo video coming soon! 🎥');
   };
+
+  // Show dashboard if user is logged in
+  if (currentView === 'dashboard') {
+    return <Dashboard />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
