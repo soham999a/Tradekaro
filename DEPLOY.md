@@ -1,22 +1,38 @@
 # 🚀 TradeKaro Surge Deployment Guide
 
+## 🌐 LIVE URL: https://tradekaro-india.surge.sh
+
 ## Quick Deploy to Surge.sh
 
-### Option 1: Automatic Deployment (Recommended)
-```bash
-npm run deploy
-```
+### Option 1: GitHub Actions (Automatic)
+1. Go to your GitHub repository
+2. Go to Settings → Secrets and variables → Actions
+3. Add these secrets:
+   - `SURGE_LOGIN`: your email
+   - `SURGE_TOKEN`: get from `surge token` command
+4. Push to `production` branch - auto-deploys!
 
 ### Option 2: Manual Deployment
 ```bash
+# Navigate to project
+cd stocksim-india
+
 # Install surge globally
 npm install -g surge
+
+# Install dependencies
+npm install --legacy-peer-deps
 
 # Build the project
 npm run build
 
 # Deploy to surge
 surge ./out tradekaro-india.surge.sh
+```
+
+### Option 3: One-Command Deploy
+```bash
+npm run deploy
 ```
 
 ### Option 3: Custom Domain

@@ -1,0 +1,38 @@
+name: Deploy TradeKaro to Surge
+
+on:
+  push:
+    branches: [ production ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm install --legacy-peer-deps
+      
+    - name: Build project
+      run: npm run build
+      
+    - name: Install Surge
+      run: npm install -g surge
+      
+    - name: Deploy to Surge
+      run: |
+        echo "tradekaro-india.surge.sh" > ./out/CNAME
+        cp ./out/index.html ./out/200.html
+        surge ./out tradekaro-india.surge.sh --token ${{ secrets.SURGE_TOKEN }}
+      env:
+        SURGE_LOGIN: ${{ secrets.SURGE_LOGIN }}
+        SURGE_TOKEN: ${{ secrets.SURGE_TOKEN }}
