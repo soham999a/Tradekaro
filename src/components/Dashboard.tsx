@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, PieChart, BarChart3, Activity } from 'lucide-react';
-import TradingInterface from './TradingInterface';
+// import TradingInterface from './TradingInterface';
 
 interface Stock {
   symbol: string;
@@ -44,7 +44,24 @@ export default function Dashboard() {
 
   // Show trading interface if selected
   if (currentView === 'trading') {
-    return <TradingInterface onBack={() => setCurrentView('dashboard')} />;
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            🚀 Trading Interface Coming Soon!
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Advanced trading features are being developed
+          </p>
+          <button
+            onClick={() => setCurrentView('dashboard')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+          >
+            Back to Dashboard
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
