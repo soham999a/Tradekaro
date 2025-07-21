@@ -15,9 +15,8 @@
     "firebase": "^10.14.0",
     "@supabase/supabase-js": "^2.45.4",
     "axios": "^1.7.7",
-    "lucide-react": "^0.303.0",
+    "lucide-react": "^0.263.1",
     "react-hot-toast": "^2.4.1",
-    "lightweight-charts": "^4.2.0",
     "clsx": "^2.1.1"
   },
   "devDependencies": {
