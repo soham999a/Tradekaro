@@ -249,7 +249,7 @@ export default function TransactionHistory({ onBack }: TransactionHistoryProps) 
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Volume</p>
                   <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                    ₹{transactions.reduce((sum, t) => sum + t.totalAmount, 0).toLocaleString()}
+                    ₹{transactions.reduce((sum, t) => sum + t.totalValue, 0).toLocaleString()}
                   </p>
                 </div>
               </div>
