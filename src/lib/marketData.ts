@@ -1,4 +1,5 @@
 import { INDIAN_STOCKS, getStockInfo, searchStocks as searchStockDatabase } from '../data/indianStocks';
+// Fixed import conflict - using imported INDIAN_STOCKS array
 
 export interface StockQuote {
   symbol: string;
