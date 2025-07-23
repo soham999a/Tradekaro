@@ -78,10 +78,19 @@ What would you like to know about today's markets?`,
     setShowSuggestions(false);
 
     try {
+      // Convert currentStock to StockAnalysisRequest format if provided
+      const stockData = currentStock ? {
+        symbol: currentStock.symbol,
+        currentPrice: currentStock.price,
+        change: currentStock.change,
+        changePercent: currentStock.changePercent,
+        volume: currentStock.volume
+      } : undefined;
+
       const response = await aiChatService.sendMessage(
         messageToSend,
         marketContext,
-        currentStock
+        stockData
       );
 
       setMessages(prev => [...prev, response]);
@@ -103,7 +112,14 @@ What would you like to know about today's markets?`,
       switch (action) {
         case 'analyze_stock':
           if (currentStock) {
-            response = await aiChatService.analyzeStock(currentStock);
+            const stockData = {
+              symbol: currentStock.symbol,
+              currentPrice: currentStock.price,
+              change: currentStock.change,
+              changePercent: currentStock.changePercent,
+              volume: currentStock.volume
+            };
+            response = await aiChatService.analyzeStock(stockData);
           } else {
             response = await aiChatService.sendMessage("Analyze the current market leaders in NIFTY 50");
           }
