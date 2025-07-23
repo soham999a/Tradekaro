@@ -8,6 +8,7 @@ import { TradingService } from '../services/tradingService';
 import { useAuth } from '../context/AuthContext';
 import { ArrowTrendingUpIcon, ArrowTrendingDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { NotificationService } from '../lib/notifications';
+import { Toaster } from 'react-hot-toast';
 
 interface TradingInterfaceProps {
   onBack: () => void;
