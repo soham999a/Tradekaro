@@ -59,23 +59,7 @@ export interface Holding {
   pnlPercent: number;
 }
 
-const INDIAN_STOCKS = {
-  'RELIANCE': 'Reliance Industries Ltd',
-  'TCS': 'Tata Consultancy Services',
-  'INFY': 'Infosys Limited',
-  'HDFCBANK': 'HDFC Bank Limited',
-  'ICICIBANK': 'ICICI Bank Limited',
-  'HINDUNILVR': 'Hindustan Unilever Ltd',
-  'ITC': 'ITC Limited',
-  'SBIN': 'State Bank of India',
-  'BHARTIARTL': 'Bharti Airtel Limited',
-  'KOTAKBANK': 'Kotak Mahindra Bank',
-  'LT': 'Larsen & Toubro',
-  'WIPRO': 'Wipro Limited',
-  'MARUTI': 'Maruti Suzuki India',
-  'BAJFINANCE': 'Bajaj Finance',
-  'HCLTECH': 'HCL Technologies'
-};
+
 
 // Base prices for realistic simulation
 const BASE_PRICES: { [key: string]: number } = {
@@ -465,19 +449,19 @@ export const getTrendingStocks = async (): Promise<StockQuote[]> => {
 };
 
 export const getTopGainers = async (): Promise<StockQuote[]> => {
-  const symbols = Object.keys(INDIAN_STOCKS);
+  const symbols = INDIAN_STOCKS.map(stock => stock.symbol);
   const stocks = await getMultipleStockQuotes(symbols);
   return stocks.sort((a, b) => b.changePercent - a.changePercent).slice(0, 5);
 };
 
 export const getTopLosers = async (): Promise<StockQuote[]> => {
-  const symbols = Object.keys(INDIAN_STOCKS);
+  const symbols = INDIAN_STOCKS.map(stock => stock.symbol);
   const stocks = await getMultipleStockQuotes(symbols);
   return stocks.sort((a, b) => a.changePercent - b.changePercent).slice(0, 5);
 };
 
 export const getMostActive = async (): Promise<StockQuote[]> => {
-  const symbols = Object.keys(INDIAN_STOCKS);
+  const symbols = INDIAN_STOCKS.map(stock => stock.symbol);
   const stocks = await getMultipleStockQuotes(symbols);
   return stocks.sort((a, b) => b.volume - a.volume).slice(0, 5);
 };
