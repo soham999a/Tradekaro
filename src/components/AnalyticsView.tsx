@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import TradingChart, { MarketAnalysis } from './TradingChart';
+import AdvancedTradingChart from './AdvancedTradingChart';
+import MarketAnalysis from './MarketAnalysis';
 import { 
   LineChart, 
   Line, 
@@ -105,12 +106,12 @@ export default function AnalyticsView() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Main Chart */}
           <div className="lg:col-span-2">
-            <TradingChart symbol={selectedStock} height={500} />
+            <AdvancedTradingChart symbol={selectedStock} />
           </div>
 
           {/* Technical Analysis */}
           <div className="lg:col-span-1">
-            <MarketAnalysis symbol={selectedStock} />
+            <MarketAnalysis onBack={() => setSelectedStock('NIFTY')} />
           </div>
         </div>
 
