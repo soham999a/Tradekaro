@@ -1,3 +1,21 @@
 {
-  "installCommand": "npm install --legacy-peer-deps"
+  "version": 2,
+  "name": "tradekaro",
+  "installCommand": "npm install --legacy-peer-deps",
+  "buildCommand": "npm run build",
+  "framework": "nextjs",
+  "regions": [
+    "bom1"
+  ],
+  "env": {
+    "NEXT_PUBLIC_DEMO_MODE": "true",
+    "NEXT_PUBLIC_BROKERAGE_RATE": "0.0025",
+    "NEXT_PUBLIC_APP_NAME": "TradeKaro",
+    "NEXT_PUBLIC_APP_VERSION": "1.0.0"
+  },
+  "functions": {
+    "src/app/**/*.{js,ts,tsx}": {
+      "maxDuration": 30
+    }
+  }
 }

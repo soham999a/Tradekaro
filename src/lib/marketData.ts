@@ -1,3 +1,5 @@
+import { INDIAN_STOCKS, getStockInfo, searchStocks as searchStockDatabase } from '../data/indianStocks';
+
 export interface StockQuote {
   symbol: string;
   name: string;
@@ -9,31 +11,52 @@ export interface StockQuote {
   open: number;
   previousClose: number;
   volume: number;
+  marketCap?: number;
+  pe?: number;
+  dividend?: number;
+  lastUpdated?: Date;
+  source?: 'ALPHA_VANTAGE' | 'TWELVE_DATA' | 'MOCK';
+  // Index trading specific fields
+  lotSize?: number;
+  tickSize?: number;
+  marginRequired?: number;
+  isIndex?: boolean;
 }
 
 export interface MarketIndex {
   name: string;
+  symbol: string;
   value: number;
   change: number;
   changePercent: number;
+  high?: number;
+  low?: number;
+  volume?: number;
+  lastUpdated?: Date;
+  source?: 'ALPHA_VANTAGE' | 'TWELVE_DATA' | 'MOCK';
+  // Index trading specific fields
+  tradeable?: boolean;
+  lotSize?: number;
+  tickSize?: number;
+  marginRequired?: number;
 }
 
 export interface Portfolio {
   totalValue: number;
-  totalGain: number;
-  totalGainPercent: number;
-  cash: number;
+  totalPnL: number;
+  totalPnLPercent: number;
+  availableBalance: number;
 }
 
 export interface Holding {
   symbol: string;
-  name: string;
+  stockName: string;
   quantity: number;
   avgPrice: number;
   currentPrice: number;
-  totalValue: number;
-  gainLoss: number;
-  gainLossPercent: number;
+  currentValue: number;
+  pnl: number;
+  pnlPercent: number;
 }
 
 const INDIAN_STOCKS = {
@@ -73,26 +96,180 @@ const BASE_PRICES: { [key: string]: number } = {
   'HCLTECH': 1680
 };
 
+// Cache for stock prices to maintain consistency during session
+const priceCache: { [symbol: string]: { price: number; timestamp: number } } = {};
+const CACHE_DURATION = 30000; // 30 seconds
+
 export const getStockQuote = async (symbol: string): Promise<StockQuote | null> => {
-  // Simulate API call with realistic data
-  const basePrice = BASE_PRICES[symbol] || (Math.random() * 3000 + 500);
-  const variation = (Math.random() - 0.5) * 0.05; // ±5% variation
-  const currentPrice = basePrice * (1 + variation);
-  const change = currentPrice - basePrice;
-  const changePercent = (change / basePrice) * 100;
-  
-  return {
-    symbol,
-    name: INDIAN_STOCKS[symbol as keyof typeof INDIAN_STOCKS] || symbol,
-    price: currentPrice,
-    change,
-    changePercent,
-    high: currentPrice + Math.random() * 50,
-    low: currentPrice - Math.random() * 50,
-    open: basePrice + (Math.random() - 0.5) * 20,
-    previousClose: basePrice,
-    volume: Math.floor(Math.random() * 1000000) + 100000
-  };
+  try {
+    // Check cache first
+    const cached = priceCache[symbol];
+    const now = Date.now();
+
+    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+      // Use cached price with small random variation
+      const variation = (Math.random() - 0.5) * 0.002; // ±0.2% variation
+      const currentPrice = cached.price * (1 + variation);
+      const basePrice = BASE_PRICES[symbol] || cached.price;
+      const change = currentPrice - basePrice;
+
+      return {
+        symbol,
+        name: INDIAN_STOCKS[symbol as keyof typeof INDIAN_STOCKS] || `${symbol} Ltd`,
+        price: Math.round(currentPrice * 100) / 100,
+        change: Math.round(change * 100) / 100,
+        changePercent: Math.round((change / basePrice) * 10000) / 100,
+        high: Math.round(currentPrice * 1.015 * 100) / 100,
+        low: Math.round(currentPrice * 0.985 * 100) / 100,
+        open: Math.round(basePrice * 100) / 100,
+        previousClose: Math.round(basePrice * 100) / 100,
+        volume: Math.floor(Math.random() * 1000000) + 100000,
+        lastUpdated: new Date(),
+        source: 'MOCK'
+      };
+    }
+
+    // Generate new price if not in cache or expired
+    const basePrice = BASE_PRICES[symbol] || (Math.random() * 3000 + 500);
+    const marketHours = isMarketOpen();
+    const variation = marketHours
+      ? (Math.random() - 0.5) * 0.03  // ±3% during market hours
+      : (Math.random() - 0.5) * 0.01; // ±1% after hours
+
+    const currentPrice = basePrice * (1 + variation);
+    const change = currentPrice - basePrice;
+
+    // Cache the price
+    priceCache[symbol] = { price: currentPrice, timestamp: now };
+
+    return {
+      symbol,
+      name: INDIAN_STOCKS[symbol as keyof typeof INDIAN_STOCKS] || `${symbol} Ltd`,
+      price: Math.round(currentPrice * 100) / 100,
+      change: Math.round(change * 100) / 100,
+      changePercent: Math.round((change / basePrice) * 10000) / 100,
+      high: Math.round(currentPrice * 1.02 * 100) / 100,
+      low: Math.round(currentPrice * 0.98 * 100) / 100,
+      open: Math.round(basePrice * 100) / 100,
+      previousClose: Math.round(basePrice * 100) / 100,
+      volume: Math.floor(Math.random() * 1000000) + 100000,
+      marketCap: Math.floor(currentPrice * (Math.random() * 1000000000 + 100000000)),
+      pe: Math.round((Math.random() * 30 + 10) * 100) / 100,
+      dividend: Math.round((Math.random() * 5) * 100) / 100,
+      lastUpdated: new Date(),
+      source: 'MOCK'
+    };
+  } catch (error) {
+    console.error(`Error fetching quote for ${symbol}:`, error);
+    return null;
+  }
+};
+
+// Helper function to check if market is open - fixed
+export const isMarketOpen = (): boolean => {
+  // Get current time in IST
+  const now = new Date();
+  const istTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+  const hours = istTime.getHours();
+  const minutes = istTime.getMinutes();
+  const currentTime = hours * 60 + minutes;
+  const dayOfWeek = istTime.getDay();
+
+  // Check if it's a weekday (Monday = 1, Sunday = 0)
+  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+
+  // Market is closed on weekends
+  if (!isWeekday) return false;
+
+  // Pre-market session: 9:00 AM to 9:15 AM
+  const preMarketOpen = 9 * 60; // 9:00 AM
+  const preMarketClose = 9 * 60 + 15; // 9:15 AM
+
+  // Regular market session: 9:15 AM to 3:30 PM
+  const marketOpen = 9 * 60 + 15; // 9:15 AM
+  const marketClose = 15 * 60 + 30; // 3:30 PM
+
+  // After-market session: 3:40 PM to 4:00 PM
+  const afterMarketOpen = 15 * 60 + 40; // 3:40 PM
+  const afterMarketClose = 16 * 60; // 4:00 PM
+
+  // Market is open during regular hours
+  return currentTime >= marketOpen && currentTime <= marketClose;
+};
+
+// Get current IST time
+export const getCurrentISTTime = (): Date => {
+  const now = new Date();
+  return new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
+};
+
+// Get market session info
+export const getMarketSession = (): { session: string; nextSession: string; timeToNext: string } => {
+  const istTime = getCurrentISTTime();
+  const hours = istTime.getHours();
+  const minutes = istTime.getMinutes();
+  const currentTime = hours * 60 + minutes;
+  const dayOfWeek = istTime.getDay();
+  const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+
+  if (!isWeekday) {
+    const daysToMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+    return {
+      session: 'Market Closed - Weekend',
+      nextSession: 'Pre-market opens Monday at 9:00 AM',
+      timeToNext: `${daysToMonday} day${daysToMonday > 1 ? 's' : ''} to go`
+    };
+  }
+
+  const preMarketOpen = 9 * 60; // 9:00 AM
+  const marketOpen = 9 * 60 + 15; // 9:15 AM
+  const marketClose = 15 * 60 + 30; // 3:30 PM
+  const afterMarketOpen = 15 * 60 + 40; // 3:40 PM
+  const afterMarketClose = 16 * 60; // 4:00 PM
+
+  if (currentTime < preMarketOpen) {
+    const timeToOpen = preMarketOpen - currentTime;
+    const hoursToOpen = Math.floor(timeToOpen / 60);
+    const minutesToOpen = timeToOpen % 60;
+    return {
+      session: 'Market Closed',
+      nextSession: 'Pre-market opens at 9:00 AM',
+      timeToNext: `${hoursToOpen}h ${minutesToOpen}m`
+    };
+  } else if (currentTime >= preMarketOpen && currentTime < marketOpen) {
+    return {
+      session: 'Pre-market Session',
+      nextSession: 'Regular market opens at 9:15 AM',
+      timeToNext: `${marketOpen - currentTime}m`
+    };
+  } else if (currentTime >= marketOpen && currentTime <= marketClose) {
+    const timeToClose = marketClose - currentTime;
+    const hoursToClose = Math.floor(timeToClose / 60);
+    const minutesToClose = timeToClose % 60;
+    return {
+      session: 'Market Open',
+      nextSession: 'Market closes at 3:30 PM',
+      timeToNext: `${hoursToClose}h ${minutesToClose}m remaining`
+    };
+  } else if (currentTime > marketClose && currentTime < afterMarketOpen) {
+    return {
+      session: 'Market Closed',
+      nextSession: 'After-market opens at 3:40 PM',
+      timeToNext: `${afterMarketOpen - currentTime}m`
+    };
+  } else if (currentTime >= afterMarketOpen && currentTime <= afterMarketClose) {
+    return {
+      session: 'After-market Session',
+      nextSession: 'Market opens tomorrow at 9:15 AM',
+      timeToNext: `${afterMarketClose - currentTime}m remaining`
+    };
+  } else {
+    return {
+      session: 'Market Closed',
+      nextSession: 'Market opens tomorrow at 9:15 AM',
+      timeToNext: 'Opens tomorrow'
+    };
+  }
 };
 
 export const getMultipleStockQuotes = async (symbols: string[]): Promise<StockQuote[]> => {
@@ -101,41 +278,185 @@ export const getMultipleStockQuotes = async (symbols: string[]): Promise<StockQu
   return results.filter(quote => quote !== null) as StockQuote[];
 };
 
+// Index base prices and trading parameters
+const INDEX_DATA = {
+  'NIFTY': {
+    name: 'NIFTY 50',
+    basePrice: 24567.85,
+    lotSize: 25,
+    tickSize: 0.05,
+    marginRequired: 150000,
+    tradeable: true
+  },
+  'BANKNIFTY': {
+    name: 'BANK NIFTY',
+    basePrice: 52345.90,
+    lotSize: 15,
+    tickSize: 0.05,
+    marginRequired: 200000,
+    tradeable: true
+  },
+  'FINNIFTY': {
+    name: 'NIFTY FINANCIAL SERVICES',
+    basePrice: 21234.50,
+    lotSize: 25,
+    tickSize: 0.05,
+    marginRequired: 120000,
+    tradeable: true
+  },
+  'MIDCPNIFTY': {
+    name: 'NIFTY MIDCAP SELECT',
+    basePrice: 12456.75,
+    lotSize: 50,
+    tickSize: 0.05,
+    marginRequired: 80000,
+    tradeable: true
+  },
+  'SENSEX': {
+    name: 'SENSEX',
+    basePrice: 80234.67,
+    lotSize: 10,
+    tickSize: 0.05,
+    marginRequired: 180000,
+    tradeable: true
+  },
+  'BANKEX': {
+    name: 'BSE BANKEX',
+    basePrice: 56789.12,
+    lotSize: 15,
+    tickSize: 0.05,
+    marginRequired: 160000,
+    tradeable: true
+  }
+};
+
 export const getMarketIndices = async (): Promise<MarketIndex[]> => {
-  const baseNifty = 24567.85;
-  const baseSensex = 80234.67;
-  const baseBankNifty = 52345.90;
-  
-  return [
-    {
-      name: 'NIFTY 50',
-      value: baseNifty + (Math.random() - 0.5) * 200,
-      change: (Math.random() - 0.5) * 100,
-      changePercent: (Math.random() - 0.5) * 1
-    },
-    {
-      name: 'SENSEX',
-      value: baseSensex + (Math.random() - 0.5) * 400,
-      change: (Math.random() - 0.5) * 200,
-      changePercent: (Math.random() - 0.5) * 0.8
-    },
-    {
-      name: 'BANK NIFTY',
-      value: baseBankNifty + (Math.random() - 0.5) * 300,
-      change: (Math.random() - 0.5) * 150,
-      changePercent: (Math.random() - 0.5) * 0.6
-    }
-  ];
+  const marketHours = isMarketOpen();
+
+  return Object.entries(INDEX_DATA).map(([symbol, data]) => {
+    // Generate realistic price movements
+    const volatility = marketHours ? 0.015 : 0.005; // Higher volatility during market hours
+    const priceChange = (Math.random() - 0.5) * data.basePrice * volatility;
+    const currentValue = data.basePrice + priceChange;
+    const change = priceChange;
+    const changePercent = (change / data.basePrice) * 100;
+
+    // Generate high/low for the day
+    const dayRange = data.basePrice * 0.02; // 2% daily range
+    const high = data.basePrice + Math.random() * dayRange;
+    const low = data.basePrice - Math.random() * dayRange;
+
+    return {
+      name: data.name,
+      symbol,
+      value: Math.round(currentValue * 100) / 100,
+      change: Math.round(change * 100) / 100,
+      changePercent: Math.round(changePercent * 100) / 100,
+      high: Math.round(high * 100) / 100,
+      low: Math.round(low * 100) / 100,
+      volume: Math.floor(Math.random() * 1000000) + 500000,
+      lastUpdated: new Date(),
+      source: 'MOCK' as const,
+      tradeable: data.tradeable,
+      lotSize: data.lotSize,
+      tickSize: data.tickSize,
+      marginRequired: data.marginRequired
+    };
+  });
+};
+
+// Get individual index quote (for trading)
+export const getIndexQuote = async (symbol: string): Promise<StockQuote | null> => {
+  const indexData = INDEX_DATA[symbol as keyof typeof INDEX_DATA];
+  if (!indexData) return null;
+
+  const marketHours = isMarketOpen();
+  const volatility = marketHours ? 0.015 : 0.005;
+  const priceChange = (Math.random() - 0.5) * indexData.basePrice * volatility;
+  const currentPrice = indexData.basePrice + priceChange;
+  const change = priceChange;
+  const changePercent = (change / indexData.basePrice) * 100;
+
+  // Generate high/low for the day
+  const dayRange = indexData.basePrice * 0.02;
+  const high = indexData.basePrice + Math.random() * dayRange;
+  const low = indexData.basePrice - Math.random() * dayRange;
+
+  return {
+    symbol,
+    name: indexData.name,
+    price: Math.round(currentPrice * 100) / 100,
+    change: Math.round(change * 100) / 100,
+    changePercent: Math.round(changePercent * 100) / 100,
+    high: Math.round(high * 100) / 100,
+    low: Math.round(low * 100) / 100,
+    open: Math.round((indexData.basePrice + (Math.random() - 0.5) * indexData.basePrice * 0.005) * 100) / 100,
+    previousClose: indexData.basePrice,
+    volume: Math.floor(Math.random() * 1000000) + 500000,
+    lastUpdated: new Date(),
+    source: 'MOCK',
+    // Index-specific trading info
+    lotSize: indexData.lotSize,
+    tickSize: indexData.tickSize,
+    marginRequired: indexData.marginRequired,
+    isIndex: true
+  };
 };
 
 export const searchStocks = async (query: string): Promise<StockQuote[]> => {
-  const allSymbols = Object.keys(INDIAN_STOCKS);
-  const filteredSymbols = allSymbols.filter(symbol => 
+  const results: StockQuote[] = [];
+
+  // Search indices first if query matches
+  const indexMatches = Object.entries(INDEX_DATA).filter(([symbol, data]) =>
     symbol.toLowerCase().includes(query.toLowerCase()) ||
-    INDIAN_STOCKS[symbol as keyof typeof INDIAN_STOCKS].toLowerCase().includes(query.toLowerCase())
+    data.name.toLowerCase().includes(query.toLowerCase())
   );
-  
-  return getMultipleStockQuotes(filteredSymbols.slice(0, 10));
+
+  // Add matching indices to results
+  for (const [symbol] of indexMatches) {
+    const indexQuote = await getIndexQuote(symbol);
+    if (indexQuote) {
+      results.push(indexQuote);
+    }
+  }
+
+  // Then search stocks
+  const searchResults = searchStockDatabase(query);
+  const stockResults = await Promise.all(
+    searchResults.slice(0, 15 - results.length).map(async (stockInfo) => {
+      try {
+        // Generate realistic quote data based on stock info
+        const basePrice = stockInfo.basePrice;
+        const volatility = 0.02;
+        const randomChange = (Math.random() - 0.5) * volatility;
+        const currentPrice = basePrice * (1 + randomChange);
+        const change = currentPrice - basePrice;
+        const changePercent = (change / basePrice) * 100;
+
+        return {
+          symbol: stockInfo.symbol,
+          name: stockInfo.name,
+          price: Number(currentPrice.toFixed(2)),
+          change: Number(change.toFixed(2)),
+          changePercent: Number(changePercent.toFixed(2)),
+          high: Number((currentPrice * 1.02).toFixed(2)),
+          low: Number((currentPrice * 0.98).toFixed(2)),
+          open: Number((basePrice * (1 + (Math.random() - 0.5) * 0.01)).toFixed(2)),
+          previousClose: basePrice,
+          volume: Math.floor(Math.random() * 1000000) + 10000,
+          source: 'MOCK' as const
+        };
+      } catch (error) {
+        console.error(`Error generating quote for ${stockInfo.symbol}:`, error);
+        return null;
+      }
+    })
+  );
+
+  // Combine indices and stocks
+  results.push(...stockResults.filter((quote): quote is StockQuote => quote !== null));
+
+  return results;
 };
 
 export const getTrendingStocks = async (): Promise<StockQuote[]> => {
@@ -159,24 +480,6 @@ export const getMostActive = async (): Promise<StockQuote[]> => {
   const symbols = Object.keys(INDIAN_STOCKS);
   const stocks = await getMultipleStockQuotes(symbols);
   return stocks.sort((a, b) => b.volume - a.volume).slice(0, 5);
-};
-
-export const isMarketOpen = (): boolean => {
-  const now = new Date();
-  const istTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"}));
-  const hours = istTime.getHours();
-  const minutes = istTime.getMinutes();
-  const day = istTime.getDay();
-  
-  // Market is closed on weekends
-  if (day === 0 || day === 6) return false;
-  
-  // Market hours: 9:15 AM to 3:30 PM IST
-  const marketOpen = 9 * 60 + 15; // 9:15 AM in minutes
-  const marketClose = 15 * 60 + 30; // 3:30 PM in minutes
-  const currentTime = hours * 60 + minutes;
-  
-  return currentTime >= marketOpen && currentTime <= marketClose;
 };
 
 export const getPortfolioData = async (): Promise<{ portfolio: Portfolio; holdings: Holding[] }> => {

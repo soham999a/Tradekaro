@@ -1,14 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getStockQuote, searchStocks, isMarketOpen, placeOrder, type StockQuote } from '../lib/marketData';
-import toast, { Toaster } from 'react-hot-toast';
+import { motion } from 'framer-motion';
+import { getStockQuote, getIndexQuote, searchStocks, isMarketOpen, type StockQuote } from '../lib/marketData';
+import { EnhancedMarketDataService } from '../lib/enhancedMarketData';
+import { TradingService } from '../services/tradingService';
+import { useAuth } from '../context/AuthContext';
+import { ArrowTrendingUpIcon, ArrowTrendingDownIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { NotificationService } from '../lib/notifications';
 
 interface TradingInterfaceProps {
   onBack: () => void;
 }
 
 export default function TradingInterface({ onBack }: TradingInterfaceProps) {
+  const { user, userData, updateUserBalance } = useAuth();
   const [selectedStock, setSelectedStock] = useState<StockQuote | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<StockQuote[]>([]);
@@ -33,11 +39,11 @@ export default function TradingInterface({ onBack }: TradingInterfaceProps) {
     if (query.length > 2) {
       setIsLoading(true);
       try {
-        const results = await searchStocks(query);
+        const results = await EnhancedMarketDataService.searchStocks(query);
         setSearchResults(results);
       } catch (error) {
         console.error('Search error:', error);
-        toast.error('Error searching stocks');
+        NotificationService.error('Error searching stocks');
       } finally {
         setIsLoading(false);
       }
@@ -49,49 +55,75 @@ export default function TradingInterface({ onBack }: TradingInterfaceProps) {
   const handleStockSelect = async (symbol: string) => {
     setIsLoading(true);
     try {
-      const quote = await getStockQuote(symbol);
+      const quote = await EnhancedMarketDataService.getStockQuote(symbol);
       if (quote) {
         setSelectedStock(quote);
         setLimitPrice(quote.price);
         setSearchResults([]);
         setSearchQuery('');
-        toast.success(`Selected ${quote.symbol}`);
+        NotificationService.success(`🎯 Selected ${quote.symbol} - ${quote.source} data`);
       }
     } catch (error) {
       console.error('Error fetching stock:', error);
-      toast.error('Error fetching stock data');
+      NotificationService.error('Error fetching stock data');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handlePlaceOrder = async () => {
-    if (!selectedStock) return;
+    if (!selectedStock || !user) return;
 
     const orderPrice = orderMode === 'MARKET' ? selectedStock.price : limitPrice;
     const totalValue = orderPrice * quantity;
 
+    // Validation
+    if (quantity <= 0) {
+      NotificationService.error('Please enter a valid quantity');
+      return;
+    }
+
+    // Validate lot size for indices
+    if (selectedStock.isIndex && selectedStock.lotSize && quantity % selectedStock.lotSize !== 0) {
+      NotificationService.indexLotSizeError(selectedStock.symbol, selectedStock.lotSize, quantity);
+      return;
+    }
+
+    if (orderMode === 'LIMIT' && limitPrice <= 0) {
+      NotificationService.error('Please enter a valid limit price');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const result = await placeOrder({
-        symbol: selectedStock.symbol,
-        type: orderType,
+      const result = await TradingService.executeTrade(
+        user.uid,
+        selectedStock.symbol,
+        orderType,
         quantity,
-        price: orderPrice,
-        orderMode
-      });
+        orderMode,
+        orderMode === 'LIMIT' ? limitPrice : undefined
+      );
 
       if (result.success) {
-        toast.success(result.message, { duration: 4000 });
+        NotificationService.tradeSuccess(
+          selectedStock.symbol,
+          orderType,
+          quantity,
+          orderMode === 'MARKET' ? selectedStock.price : limitPrice,
+          selectedStock.isIndex
+        );
         // Reset form
         setQuantity(1);
         setOrderMode('MARKET');
+        setLimitPrice(0);
+        // Refresh user balance (this will be handled by the auth context)
       } else {
-        toast.error('Order failed. Please try again.');
+        NotificationService.error(result.message);
       }
     } catch (error) {
       console.error('Order error:', error);
-      toast.error('Error placing order');
+      NotificationService.error('Error placing order');
     } finally {
       setIsLoading(false);
     }
@@ -105,27 +137,40 @@ export default function TradingInterface({ onBack }: TradingInterfaceProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-100/50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <Toaster position="top-right" />
-      
+
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
+      <header className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-lg border-b border-gray-200/50 dark:border-slate-700/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={onBack}
-                className="mr-4 flex items-center text-blue-600 hover:text-blue-800 dark:text-blue-400 transition-colors"
+                className="mr-6 flex items-center px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg shadow-blue-500/25"
               >
-                <span className="mr-1">←</span>
-                Back to Dashboard
-              </button>
-              <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                📈 TradeKaro
-              </h1>
-              <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                Trading Interface
-              </span>
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Dashboard
+              </motion.button>
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mr-3">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Trading Terminal
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Professional Trading Interface
+                  </p>
+                </div>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <div className={`flex items-center px-3 py-1 rounded-full text-sm font-medium ${
@@ -177,12 +222,24 @@ export default function TradingInterface({ onBack }: TradingInterfaceProps) {
                     >
                       <div className="flex justify-between items-center">
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white text-lg">
-                            {stock.symbol}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-900 dark:text-white text-lg">
+                              {stock.symbol}
+                            </p>
+                            {stock.isIndex && (
+                              <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 rounded-full">
+                                INDEX
+                              </span>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             {stock.name}
                           </p>
+                          {stock.isIndex && stock.lotSize && (
+                            <p className="text-xs text-gray-400 dark:text-gray-500">
+                              Lot Size: {stock.lotSize}
+                            </p>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-gray-900 dark:text-white text-lg">
@@ -295,15 +352,29 @@ export default function TradingInterface({ onBack }: TradingInterfaceProps) {
                   {/* Quantity */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Quantity
+                      Quantity {selectedStock?.isIndex && selectedStock.lotSize && `(Lot Size: ${selectedStock.lotSize})`}
                     </label>
                     <input
                       type="number"
-                      min="1"
+                      min={selectedStock?.lotSize || 1}
+                      step={selectedStock?.lotSize || 1}
                       value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 1;
+                        const lotSize = selectedStock?.lotSize || 1;
+                        // Round to nearest lot size for indices
+                        const adjustedValue = selectedStock?.isIndex ?
+                          Math.max(lotSize, Math.round(value / lotSize) * lotSize) :
+                          Math.max(1, value);
+                        setQuantity(adjustedValue);
+                      }}
                       className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-lg"
                     />
+                    {selectedStock?.isIndex && selectedStock.lotSize && quantity % selectedStock.lotSize !== 0 && (
+                      <p className="text-red-500 text-sm mt-1">
+                        Quantity must be in multiples of {selectedStock.lotSize}
+                      </p>
+                    )}
                   </div>
 
                   {/* Order Mode */}

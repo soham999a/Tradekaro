@@ -1,175 +1,152 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import TradingInterface from './TradingInterface';
-import Portfolio from './Portfolio';
-import MarketAnalysis from './MarketAnalysis';
 import { getMarketIndices, type MarketIndex } from '../lib/marketData';
-
-interface Stock {
-  symbol: string;
-  name: string;
-  price: number;
-  change: number;
-  changePercent: number;
-}
-
-interface Portfolio {
-  totalValue: number;
-  totalGain: number;
-  totalGainPercent: number;
-  cash: number;
-}
+import { EnhancedMarketDataService } from '../lib/enhancedMarketData';
+import { TradingService, type PortfolioSummary } from '../services/tradingService';
+import { useAuth } from '../context/AuthContext';
+import { PortfolioCard, BalanceCard, DayChangeCard, TotalInvestedCard } from './TradingCard';
 
 export default function Dashboard() {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'trading' | 'portfolio' | 'analysis'>('dashboard');
-  const [portfolio, setPortfolio] = useState<Portfolio>({
-    totalValue: 1000000,
-    totalGain: 25000,
-    totalGainPercent: 2.56,
-    cash: 750000
-  });
-
-  const [watchlist, setWatchlist] = useState<Stock[]>([
-    { symbol: 'RELIANCE', name: 'Reliance Industries', price: 2456.75, change: 45.30, changePercent: 1.88 },
-    { symbol: 'TCS', name: 'Tata Consultancy Services', price: 3678.90, change: -23.45, changePercent: -0.63 },
-    { symbol: 'INFY', name: 'Infosys Limited', price: 1534.20, change: 18.75, changePercent: 1.24 },
-    { symbol: 'HDFCBANK', name: 'HDFC Bank', price: 1687.45, change: 12.30, changePercent: 0.73 },
-    { symbol: 'ICICIBANK', name: 'ICICI Bank', price: 987.60, change: -8.90, changePercent: -0.89 }
-  ]);
-
+  const { user, userData } = useAuth();
+  const [portfolio, setPortfolio] = useState<PortfolioSummary | null>(null);
   const [marketIndices, setMarketIndices] = useState<MarketIndex[]>([]);
+  const [watchlist, setWatchlist] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadMarketData();
-  }, []);
+  const loadData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-  const loadMarketData = async () => {
+    setLoading(true);
     try {
-      const indices = await getMarketIndices();
+      const [indices, portfolioSummary] = await Promise.all([
+        EnhancedMarketDataService.getMarketIndices(),
+        TradingService.getPortfolioSummary(user.uid)
+      ]);
+
       setMarketIndices(indices);
+      setPortfolio(portfolioSummary);
+
+      // Load sample watchlist
+      const sampleWatchlist = await Promise.all([
+        'RELIANCE', 'TCS', 'INFY', 'HDFCBANK'
+      ].map(symbol => EnhancedMarketDataService.getStockQuote(symbol)));
+
+      setWatchlist(sampleWatchlist.filter(Boolean));
     } catch (error) {
-      console.error('Error loading market data:', error);
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Show trading interface if selected
-  if (currentView === 'trading') {
-    return <TradingInterface onBack={() => setCurrentView('dashboard')} />;
-  }
+  useEffect(() => {
+    let isMounted = true;
 
-  // Show portfolio if selected
-  if (currentView === 'portfolio') {
-    return <Portfolio onBack={() => setCurrentView('dashboard')} />;
-  }
+    const loadDataSafely = async () => {
+      if (isMounted) {
+        await loadData();
+      }
+    };
 
-  // Show market analysis if selected
-  if (currentView === 'analysis') {
-    return <MarketAnalysis onBack={() => setCurrentView('dashboard')} />;
+    loadDataSafely();
+
+    // Refresh data every 30 seconds
+    const interval = setInterval(() => {
+      if (isMounted) {
+        loadDataSafely();
+      }
+    }, 30000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative mb-8">
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 blur-lg opacity-20 animate-pulse"></div>
+            <div className="relative">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 dark:border-blue-800"></div>
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent absolute top-0 left-0"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Loading TradeKaro</h2>
+          <p className="text-gray-600 dark:text-gray-400 font-medium mb-4">Preparing your trading dashboard...</p>
+          <div className="flex justify-center space-x-1">
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+            <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                📈 TradeKaro
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-100/50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {/* Welcome Message */}
+        <div className="mb-8 animate-fade-in">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
+                Welcome back, {userData?.name || 'Trader'}!
+                <span className="inline-block animate-bounce ml-2">👋</span>
               </h1>
-              <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                Trading Dashboard
-              </span>
+              <p className="text-gray-600 dark:text-gray-400 text-lg">
+                Here&apos;s your trading dashboard overview
+              </p>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="hidden lg:flex items-center space-x-4">
+              <div className="flex items-center space-x-2 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-xl px-4 py-2 border border-gray-200/50 dark:border-slate-700/50 shadow-sm">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Market Open</span>
+              </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Portfolio Value</p>
-                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                  ₹{portfolio.totalValue.toLocaleString()}
+                <p className="text-sm text-gray-500 dark:text-gray-400">Last Updated</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {new Date().toLocaleTimeString('en-IN', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'Asia/Kolkata'
+                  })} IST
                 </p>
               </div>
-              <button
-                onClick={() => setCurrentView('analysis')}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                📊 Analysis
-              </button>
-              <button
-                onClick={() => setCurrentView('portfolio')}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                💼 Portfolio
-              </button>
-              <button
-                onClick={() => setCurrentView('trading')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                🚀 Trade
-              </button>
             </div>
           </div>
         </div>
-      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Portfolio Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <span className="text-2xl">💰</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Value</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  ₹{portfolio.totalValue.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <PortfolioCard
+            totalValue={portfolio?.totalValue || 0}
+            totalPnL={portfolio?.totalPnL || 0}
+            totalPnLPercent={portfolio?.totalPnLPercent || 0}
+          />
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                <span className="text-2xl">📈</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Gain</p>
-                <p className="text-2xl font-semibold text-green-600 dark:text-green-400">
-                  +₹{portfolio.totalGain.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
+          <BalanceCard balance={userData?.balance || 100000} />
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <span className="text-2xl">📊</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Gain %</p>
-                <p className="text-2xl font-semibold text-purple-600 dark:text-purple-400">
-                  +{portfolio.totalGainPercent}%
-                </p>
-              </div>
-            </div>
-          </div>
+          <DayChangeCard
+            dayChange={portfolio?.dayChange || 0}
+            dayChangePercent={portfolio?.dayChangePercent || 0}
+          />
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
-                <span className="text-2xl">⚡</span>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Available Cash</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-                  ₹{portfolio.cash.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
+          <TotalInvestedCard totalInvested={portfolio?.totalInvested || 0} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -259,16 +236,16 @@ export default function Dashboard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <button
-                            onClick={() => setCurrentView('trading')}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 mr-4 transition-colors"
+                            onClick={() => console.log('Buy', stock.symbol)}
+                            className="text-green-600 hover:text-green-700 dark:text-green-400 mr-4 transition-colors px-3 py-1 bg-green-50 dark:bg-green-900/20 rounded-lg font-medium"
                           >
-                            🟢 Buy
+                            Buy
                           </button>
                           <button
-                            onClick={() => setCurrentView('trading')}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 transition-colors"
+                            onClick={() => console.log('Sell', stock.symbol)}
+                            className="text-red-600 hover:text-red-700 dark:text-red-400 transition-colors px-3 py-1 bg-red-50 dark:bg-red-900/20 rounded-lg font-medium"
                           >
-                            🔴 Sell
+                            Sell
                           </button>
                         </td>
                       </tr>
