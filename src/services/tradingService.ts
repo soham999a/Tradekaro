@@ -60,16 +60,6 @@ export interface Holding {
   marginUsed?: number;
 }
 
-interface PortfolioSummary {
-  totalInvested: number;
-  totalCurrentValue: number;
-  totalPnL: number;
-  totalPnLPercent: number;
-  availableBalance: number;
-  totalPortfolioValue: number;
-  holdingsCount: number;
-}
-
 export interface PortfolioSummary {
   totalValue: number;
   totalInvested: number;
@@ -621,26 +611,7 @@ export class TradingService {
     }
   }
 
-  static async getPortfolioSummary(uid: string): Promise<PortfolioSummary> {
-    try {
-      const holdings = await this.getUserHoldings(uid);
-      const userData = await this.getUserData(uid);
-      const availableBalance = userData?.balance || 500000; // Default starting balance
 
-      return this.calculatePortfolioSummary(holdings, availableBalance);
-    } catch (error) {
-      console.error('Error calculating portfolio summary:', error);
-      return {
-        totalInvested: 0,
-        totalCurrentValue: 0,
-        totalPnL: 0,
-        totalPnLPercent: 0,
-        availableBalance: 500000,
-        totalPortfolioValue: 500000,
-        holdingsCount: 0
-      };
-    }
-  }
 
   static async getUserData(uid: string): Promise<any> {
     try {
