@@ -22,6 +22,7 @@ interface UserData {
   createdAt: Date;
   lastLogin: Date;
   onboardingCompleted?: boolean;
+  completedAt?: Date;
   experience?: string;
   riskTolerance?: string;
   investmentGoals?: string;
