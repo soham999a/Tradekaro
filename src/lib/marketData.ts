@@ -100,7 +100,7 @@ export const getStockQuote = async (symbol: string): Promise<StockQuote | null> 
 
       return {
         symbol,
-        name: INDIAN_STOCKS[symbol as keyof typeof INDIAN_STOCKS] || `${symbol} Ltd`,
+        name: INDIAN_STOCKS.find(stock => stock.symbol === symbol)?.name || `${symbol} Ltd`,
         price: Math.round(currentPrice * 100) / 100,
         change: Math.round(change * 100) / 100,
         changePercent: Math.round((change / basePrice) * 10000) / 100,
@@ -129,7 +129,7 @@ export const getStockQuote = async (symbol: string): Promise<StockQuote | null> 
 
     return {
       symbol,
-      name: INDIAN_STOCKS[symbol as keyof typeof INDIAN_STOCKS] || `${symbol} Ltd`,
+      name: INDIAN_STOCKS.find(stock => stock.symbol === symbol)?.name || `${symbol} Ltd`,
       price: Math.round(currentPrice * 100) / 100,
       change: Math.round(change * 100) / 100,
       changePercent: Math.round((change / basePrice) * 10000) / 100,
