@@ -532,7 +532,7 @@ export class TradingService {
 
   static calculatePortfolioSummary(holdings: Holding[], availableBalance: number): PortfolioSummary {
     const totalInvested = holdings.reduce((sum, holding) => sum + holding.totalInvested, 0);
-    const totalCurrentValue = holdings.reduce((sum, holding) => sum + holding.currentValue, 0);
+    const totalCurrentValue = holdings.reduce((sum, holding) => sum + (holding.currentValue || 0), 0);
     const totalPnL = totalCurrentValue - totalInvested;
     const totalPnLPercent = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
     const totalPortfolioValue = totalCurrentValue + availableBalance;

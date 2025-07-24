@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Production optimizations
-  output: 'export',
+  // Netlify deployment configuration
   trailingSlash: true,
-  distDir: 'out',
   eslint: {
     ignoreDuringBuilds: true,
   },
