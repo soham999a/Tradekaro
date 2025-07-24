@@ -512,11 +512,11 @@ export const getPortfolioData = async (): Promise<{ portfolio: Portfolio; holdin
   const totalGain = totalValue - totalCost;
   const totalGainPercent = (totalGain / totalCost) * 100;
 
-  const portfolio = {
+  const portfolio: Portfolio = {
     totalValue,
-    totalGain,
-    totalGainPercent,
-    cash: 750000 // Available cash
+    totalPnL: totalGain,
+    totalPnLPercent: totalGainPercent,
+    availableBalance: 750000 // Available cash
   };
 
   return { portfolio, holdings };
