@@ -496,18 +496,18 @@ export const getPortfolioData = async (): Promise<{ portfolio: Portfolio; holdin
 
     return {
       symbol: holding.symbol,
-      name: quote?.name || holding.symbol,
+      stockName: quote?.name || holding.symbol,
       quantity: holding.quantity,
       avgPrice: holding.avgPrice,
       currentPrice,
-      totalValue,
-      gainLoss,
-      gainLossPercent
+      currentValue: totalValue,
+      pnl: gainLoss,
+      pnlPercent: gainLossPercent
     };
   });
 
   // Calculate portfolio totals
-  const totalValue = holdings.reduce((sum, h) => sum + h.totalValue, 0);
+  const totalValue = holdings.reduce((sum, h) => sum + h.currentValue, 0);
   const totalCost = holdings.reduce((sum, h) => sum + (h.avgPrice * h.quantity), 0);
   const totalGain = totalValue - totalCost;
   const totalGainPercent = (totalGain / totalCost) * 100;
