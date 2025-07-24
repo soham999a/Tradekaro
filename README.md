@@ -1,4 +1,5 @@
 # 🚀 TradeKaro - Indian Stock Trading Platform
+#TRY - https://tradekaro1.netlify.app/
 
 A comprehensive, real-time Indian stock trading platform with virtual trading, portfolio management, and educational features.
 
