@@ -1,6 +1,12 @@
 import { INDIAN_STOCKS, getStockInfo, searchStocks as searchStockDatabase } from '../data/indianStocks';
 // Fixed import conflict - using imported INDIAN_STOCKS array
 
+// Create a simple mapping for backward compatibility
+const STOCK_NAME_MAP: { [key: string]: string } = {};
+INDIAN_STOCKS.forEach(stock => {
+  STOCK_NAME_MAP[stock.symbol] = stock.name;
+});
+
 export interface StockQuote {
   symbol: string;
   name: string;
@@ -100,7 +106,7 @@ export const getStockQuote = async (symbol: string): Promise<StockQuote | null> 
 
       return {
         symbol,
-        name: INDIAN_STOCKS.find(stock => stock.symbol === symbol)?.name || `${symbol} Ltd`,
+        name: STOCK_NAME_MAP[symbol] || `${symbol} Ltd`,
         price: Math.round(currentPrice * 100) / 100,
         change: Math.round(change * 100) / 100,
         changePercent: Math.round((change / basePrice) * 10000) / 100,
@@ -129,7 +135,7 @@ export const getStockQuote = async (symbol: string): Promise<StockQuote | null> 
 
     return {
       symbol,
-      name: INDIAN_STOCKS.find(stock => stock.symbol === symbol)?.name || `${symbol} Ltd`,
+      name: STOCK_NAME_MAP[symbol] || `${symbol} Ltd`,
       price: Math.round(currentPrice * 100) / 100,
       change: Math.round(change * 100) / 100,
       changePercent: Math.round((change / basePrice) * 10000) / 100,
