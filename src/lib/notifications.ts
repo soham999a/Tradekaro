@@ -16,7 +16,6 @@ export class NotificationService {
       style: {
         cursor: options?.dismissible !== false ? 'pointer' : 'default',
       },
-      onClick: options?.dismissible !== false ? () => toast.dismiss() : undefined,
     });
   }
 
@@ -26,7 +25,6 @@ export class NotificationService {
       style: {
         cursor: options?.dismissible !== false ? 'pointer' : 'default',
       },
-      onClick: options?.dismissible !== false ? () => toast.dismiss() : undefined,
     });
   }
 
@@ -40,7 +38,6 @@ export class NotificationService {
         color: '#1d4ed8',
         cursor: options?.dismissible !== false ? 'pointer' : 'default',
       },
-      onClick: options?.dismissible !== false ? () => toast.dismiss() : undefined,
     });
   }
 
@@ -54,7 +51,6 @@ export class NotificationService {
         color: '#d97706',
         cursor: options?.dismissible !== false ? 'pointer' : 'default',
       },
-      onClick: options?.dismissible !== false ? () => toast.dismiss() : undefined,
     });
   }
 
@@ -82,7 +78,6 @@ export class NotificationService {
         cursor: 'pointer',
         ...options.style,
       },
-      onClick: () => toast.dismiss(),
     });
   }
 
