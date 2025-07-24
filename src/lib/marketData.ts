@@ -445,7 +445,7 @@ export const searchStocks = async (query: string): Promise<StockQuote[]> => {
   );
 
   // Combine indices and stocks
-  results.push(...stockResults.filter((quote): quote is StockQuote => quote !== null));
+  results.push(...stockResults.filter(quote => quote !== null) as StockQuote[]);
 
   return results;
 };
