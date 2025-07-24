@@ -539,12 +539,12 @@ export class TradingService {
 
     return {
       totalInvested,
-      totalCurrentValue,
+      totalValue: totalCurrentValue,
       totalPnL,
       totalPnLPercent,
       availableBalance,
-      totalPortfolioValue,
-      holdingsCount: holdings.length
+      dayChange: 0, // TODO: Calculate actual day change
+      dayChangePercent: 0 // TODO: Calculate actual day change percent
     };
   }
 
